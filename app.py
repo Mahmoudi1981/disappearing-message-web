@@ -6,6 +6,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 import threading
 import time
+import os
 
 app = Flask(__name__)
 
@@ -87,4 +88,4 @@ def receive_message():
         return jsonify({'error': 'رمز عبور اشتباه است یا پیام آسیب دیده.'}), 403
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

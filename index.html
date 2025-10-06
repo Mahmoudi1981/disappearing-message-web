@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>🔐 پیام خودنابودشونده</title>
+    <style>
+        * { font-family: 'Vazir', 'Tahoma', sans-serif; }
+        body {
+            background: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+            color: #2c3e50;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        textarea, input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d8e0;
+            border-radius: 8px;
+            font-size: 14px;
+            direction: ltr;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button.send { background: #2ecc71; }
+        button:hover { opacity: 0.9; }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            word-break: break-all;
+        }
+        .error { color: #e74c3c; }
+        .success { color: #27ae60; }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #95a5a6;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🔐 پیام خودنابودشونده</h1>
+
+    <!-- ارسال پیام -->
+    <div class="section">
+        <h2>ارسال پیام جدید</h2>
+        <label for="message">پیام شما:</label>
+        <textarea id="message" placeholder="پیام خود را وارد کنید..."></textarea>
+
+        <label for="send-password">رمز عبور (فقط شما و گیرنده باید بدونید):</label>
+        <input type="password" id="send-password" placeholder="رمز عبور را وارد کنید">
+
+        <button class="send" onclick="sendMessage()">ارسال پیام</button>
+        <div id="send-result" class="result" style="display:none;"></div>
+    </div>
+
+    <hr>
+
+    <!-- دریافت پیام -->
+    <div class="section">
+        <h2>دریافت پیام</h2>
+        <label for="token">کد پیام:</label>
+        <input type="text" id="token" placeholder="کد پیام را وارد کنید">
+
+        <label for="recv-password">رمز عبور:</label>
+        <input type="password" id="recv-password" placeholder="رمز عبور را وارد کنید">
+
+        <button onclick="receiveMessage()">دریافت پیام</button>
+        <div id="recv-result" class="result" style="display:none;"></div>
+    </div>
+
+    <footer>
+        پیام فقط یک‌بار قابل خواندن است و پس از ۷ روز (در صورت خوانده نشدن) پاک می‌شود.
+    </footer>
+</div>
+
+<script>
+    async function sendMessage() {
+        const message = document.getElementById('message').value.trim();
+        const password = document.getElementById('send-password').value.trim();
+        const resultDiv = document.getElementById('send-result');
+
+        if (!message || !password) {
+            resultDiv.innerHTML = '<span class="error">پیام و رمز عبور نمی‌تواند خالی باشد.</span>';
+            resultDiv.style.display = 'block';
+            return;
+        }
+
+        resultDiv.innerHTML = 'در حال ارسال...';
+        resultDiv.style.display = 'block';
+
+        try {
+            const response = await fetch('/send', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message, password})
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                resultDiv.innerHTML = `
+                        <strong>کد پیام شما:</strong><br>
+                        <span style="font-family: monospace; background: #eee; padding: 5px; display: block;">${data.token}</span><br>
+                        <small>⚠️ رمز عبور را جداگانه به گیرنده بدهید.</small>
+                    `;
+                resultDiv.className = 'result success';
+            } else {
+                resultDiv.innerHTML = `<span class="error">${data.error}</span>`;
+            }
+        } catch (e) {
+            resultDiv.innerHTML = '<span class="error">خطا در اتصال به سرور.</span>';
+        }
+    }
+
+    async function receiveMessage() {
+        const token = document.getElementById('token').value.trim();
+        const password = document.getElementById('recv-password').value.trim();
+        const resultDiv = document.getElementById('recv-result');
+
+        if (!token || !password) {
+            resultDiv.innerHTML = '<span class="error">کد و رمز عبور نمی‌تواند خالی باشد.</span>';
+            resultDiv.style.display = 'block';
+            return;
+        }
+
+        resultDiv.innerHTML = 'در حال باز کردن...';
+        resultDiv.style.display = 'block';
+
+        try {
+            const response = await fetch('/receive', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({token, password})
+            });
+            const data = await response.json();
+
+            if (response.ok) {
+                resultDiv.innerHTML = `<strong>پیام شما:</strong><br>${data.message}`;
+                resultDiv.className = 'result success';
+            } else {
+                resultDiv.innerHTML = `<span class="error">${data.error}</span>`;
+            }
+        } catch (e) {
+            resultDiv.innerHTML = '<span class="error">خطا در اتصال به سرور.</span>';
+        }
+    }
+</script>
+</body>
+</html>
